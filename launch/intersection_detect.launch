@@ -1,0 +1,4 @@
+<?xml version="1.0"?>
+<launch>
+    <node pkg="intersection_detect" type="intersection_detect_node.py" name="intersection_node" output="screen"/>
+</launch>
