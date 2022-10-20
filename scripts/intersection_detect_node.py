@@ -53,7 +53,8 @@ class intersection_detector_node:
         self.start_time = time.strftime("%Y%m%d_%H:%M:%S")
         self.path = roslib.packages.get_pkg_dir('intersection_detector') + '/data/result'
         self.save_path = roslib.packages.get_pkg_dir('intersection_detector') + '/data/model'
-        self.load_path =roslib.packages.get_pkg_dir('intersection_detector') + '/data/model'
+        self.load_path =roslib.packages.get_pkg_dir('intersection_detector') + '/data/real1005/model_gpu.pt'
+        #self.load_path =roslib.packages.get_pkg_dir('intersection_detector') + '/data/model20221006_16:44:57/model_gpu.pt'
         self.previous_reset_time = 0
         self.pos_x = 0.0
         self.pos_y = 0.0
@@ -130,11 +131,11 @@ class intersection_detector_node:
         # cmd_dir = np.asanyarray(self.cmd_dir_data)
         ros_time = str(rospy.Time.now())
 
-        # if self.episode == 0:
-        #     self.learning = True
-        #     self.dl.save(self.save_path)
-        #     self.dl.load(self.load_path)
-        #     print("load model: ",self.load_path)
+        if self.episode == 0:
+            self.learning = False
+            self.dl.save(self.save_path)
+            self.dl.load(self.load_path)
+            print("load model: ",self.load_path)
         
         if self.episode == 30000:
             self.learning = False

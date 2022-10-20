@@ -1,3 +1,4 @@
+from asyncore import write
 from traceback import print_tb
 import numpy as np
 import matplotlib as plt
@@ -99,7 +100,7 @@ class deep_learning:
         self.transform = transforms.Compose([transforms.ToTensor()])
         self.first_flag = True
         torch.backends.cudnn.benchmark = False
-        #self.writer = SummaryWriter(log_dir="/home/haru/nav_ws/src/nav_cloning/runs",comment="log_1")
+        self.writer = SummaryWriter(log_dir='/home/haru/nav_ws/src/intersection_detector/data/tensorboard/runs')
 
     def act_and_trains(self, img, intersection_label):
 
@@ -112,6 +113,10 @@ class deep_learning:
             self.x_cat = self.x_cat.permute(0, 3, 1, 2)
             self.t_cat = torch.tensor(
                 [intersection_label], dtype=torch.float32, device=self.device)
+            
+            self.writer.add_graph(self.net,self.x_cat)
+            self.writer.close()
+            
             self.first_flag = False
         # <to tensor img(x),intersection_label(t)>
         x = torch.tensor(img, dtype=torch.float32,
@@ -123,8 +128,6 @@ class deep_learning:
                          device=self.device)
         self.x_cat = torch.cat([self.x_cat, x], dim=0)
         self.t_cat = torch.cat([self.t_cat, t], dim=0)
-
-        # print(self.x_cat.size()[0])
 
         # <make dataset>
         #print("train x =",self.x_cat.shape,x.device,"train t = " ,self.t_cat.shape,t.device)
@@ -153,18 +156,19 @@ class deep_learning:
         self.optimizer.step()
         # self.writer.add_scalar("loss",loss,self.count)
         self.train_accuracy +=  torch.sum(torch.max(y_train,1)[1] == torch.max(t_label_train,1)[1]).item()
-        print("label :" ,self.train_accuracy , "/8" , (self.train_accuracy/len(t_label_train))*100 , "%")
+        print("label :" ,self.train_accuracy , "/",BATCH_SIZE , (self.train_accuracy/len(t_label_train))*100 , "%")
         # <test>
         self.net.eval()
         intersection_training = self.net(x)
-        # self.writer.add_scalar("angle",abs(intersection_training[0][0].item()-intersection_label),self.count)
+        self.writer.add_scalar("loss",loss,self.count)
+        self.count += 1
         # print("action=" ,intersection_training[0][0].item() ,"loss=" ,loss.item())
         # print("action=" ,intersection_training.item() ,"loss=" ,loss.item())
 
-        # if self.first_flag:
-        #     self.writer.add_graph(self.net,(x,c))
-        # self.writer.close()
-        # self.writer.flush()
+        if self.first_flag:
+            self.writer.add_graph(self.net,(x))
+            self.writer.close()
+            self.writer.flush()
         # <reset dataset>
         if self.x_cat.size()[0] > MAX_DATA:
             self.x_cat = torch.empty(1, 3, 48, 64).to(self.device)
