@@ -16,8 +16,9 @@ from std_msgs.msg import Int8,String
 from std_srvs.srv import Trigger
 from nav_msgs.msg import Path
 from std_msgs.msg import Int8MultiArray
-from waypoint_nav.msg import cmd_dir_intersection
-from geometry_msgs.msg import PoseWithCovarianceStamped
+# from waypoint_nav.msg import cmd_dir_intersection
+from scenario_navigation_msgs.msg import cmd_dir_intersection
+# from geometry_msgs.msg import PoseWithCovarianceStamped
 from std_srvs.srv import Empty
 from std_srvs.srv import SetBool, SetBoolResponse
 import csv
@@ -34,7 +35,8 @@ class intersection_detector_node:
         self.action_num = 4
         self.dl = deep_learning(n_action = self.action_num)
         self.bridge = CvBridge()
-        self.intersection_pub = rospy.Publisher("passage_type",String,queue_size=1)
+        # self.intersection_pub = rospy.Publisher("passage_type",String,queue_size=1)
+        self.intersection_pub = rospy.Publisher("passage_type",cmd_dir_intersection,queue_size=1)
         self.image_sub = rospy.Subscriber("/camera/rgb/image_raw", Image, self.callback)
         self.image_left_sub = rospy.Subscriber("/camera_left/rgb/image_raw", Image, self.callback_left_camera)
         self.image_right_sub = rospy.Subscriber("/camera_right/rgb/image_raw", Image, self.callback_right_camera)
@@ -44,7 +46,8 @@ class intersection_detector_node:
         self.min_distance = 0.0
         self.action = 0.0
         self.episode = 0
-        self.intersection =String()
+        # self.intersection =String()
+        self.intersection = cmd_dir_intersection()
         self.path_pose = PoseArray()
         self.cv_image = np.zeros((480,640,3), np.uint8)
         self.cv_left_image = np.zeros((480,640,3), np.uint8)
@@ -135,7 +138,7 @@ class intersection_detector_node:
         if self.episode == 0:
             self.learning = False
             # self.dl.save(self.save_path)
-            # self.dl.load(self.load_path)
+            self.dl.load(self.load_path)
             # print("load model: ",self.load_path)
         
         if self.episode == 30000:
@@ -153,7 +156,7 @@ class intersection_detector_node:
           
             # end mode
             intersection_name = self.intersection_list[intersection]
-            self.intersection.data = self.intersection_list[bufferdata]
+            self.intersection.intersection_name = self.intersection_list[bufferdata]
             self.intersection_pub.publish(self.intersection)
             print("learning: " + str(self.episode) + ", loss: " + str(loss) + ", label: " + str(intersection) + " , intersection_name: " + str(intersection_name)+" , buffer_name: " + str(self.intersection.data))
             # print("learning: " + str(self.episode) + ", loss: " + str(loss) + ", label: " + str(intersection) + " , intersection_name: " + str(intersection_name) +", correct label: " + str(self.cmd_dir_data))
@@ -168,10 +171,11 @@ class intersection_detector_node:
             # print('\033[32m'+'test_mode'+'\033[0m')
             intersection,bufferdata = self.dl.act(img)
             intersection_name = self.intersection_list[intersection]
-            self.intersection.data = self.intersection_list[bufferdata]
-            print(self.intersection.data)
+            self.intersection.intersection_name = self.intersection_list[bufferdata]
+            print(self.intersection.intersection_name)
             self.intersection_pub.publish(self.intersection)
-            # print("test" + str(self.episode) + ", label:" + str(intersection)  +", intersection_name: " + str(intersection_name) + ", correct label: " + str(self.cmd_dir_data))
+            print("test" + str(self.episode) +", intersection_name: " + str(self.intersection.intersection_name))
+            # print("test" + str(self.episode) +", intersection_name: " + str(self.intersection.data) + ", correct label: " + str(self.cmd_dir_data))
             #print("test: " + str(self.episode) + ", label:" + str(intersection)  +", intersection_name: " + '\033[32m'+str(intersection_name)+'\033[0m' + ", buffer_name: " + str(self.intersection.data))
 
             self.episode +=1

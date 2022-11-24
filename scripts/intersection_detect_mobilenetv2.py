@@ -12,7 +12,7 @@ import torch
 import torchvision
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset, Dataset, random_split
-from torchvision import transforms,models
+from torchvision import transforms, models
 from torchvision.datasets import ImageFolder
 import torch.optim as optim
 import torchvision.datasets as datasets
@@ -31,8 +31,9 @@ class Net(nn.Module):
     def __init__(self, n_channel, n_out):
         super().__init__()
     # <Network CNN 3 + FC 2>
-        v2 = models.mobilenet_v2(pretrained=True)
-        v2.classifier[1] = nn.Linear(in_features=v2.last_channel ,out_features=n_out)
+        v2 = models.mobilenet_v2()
+        v2.classifier[1] = nn.Linear(
+            in_features=v2.last_channel, out_features=n_out)
     # <CNN layer>
         self.v2_layer = v2
 
@@ -65,8 +66,8 @@ class deep_learning:
         self.loss_list = []
         self.acc_list = []
         self.datas = []
-        self.buffer_list = torch.zeros(1,4).to(self.device)
-        self.buffer_size =7
+        self.buffer_list = torch.zeros(1, 4).to(self.device)
+        self.buffer_size = 7
         self.intersection_labels = []
         # self.criterion = nn.MSELoss()
         self.criterion = nn.CrossEntropyLoss()
@@ -79,17 +80,17 @@ class deep_learning:
 
         # <training mode>
         self.net.train()
-        self.train_accuracy =0
+        self.train_accuracy = 0
         if self.first_flag:
             self.x_cat = torch.tensor(
                 img, dtype=torch.float32, device=self.device).unsqueeze(0)
             self.x_cat = self.x_cat.permute(0, 3, 1, 2)
             self.t_cat = torch.tensor(
                 [intersection_label], dtype=torch.float32, device=self.device)
-            
+
             # self.writer.add_graph(self.net,self.x_cat)
             # self.writer.close()
-            
+
             self.first_flag = False
         # <to tensor img(x),intersection_label(t)>
         x = torch.tensor(img, dtype=torch.float32,
@@ -128,26 +129,29 @@ class deep_learning:
         loss.backward()
         self.optimizer.step()
         # self.writer.add_scalar("loss",loss,self.count)
-        self.train_accuracy +=  torch.sum(torch.max(y_train,1)[1] == torch.max(t_label_train,1)[1]).item()
-        print("label :" ,self.train_accuracy , "/",BATCH_SIZE , (self.train_accuracy/len(t_label_train))*100 , "%")
+        self.train_accuracy += torch.sum(torch.max(y_train, 1)
+                                         [1] == torch.max(t_label_train, 1)[1]).item()
+        print("label :", self.train_accuracy, "/", BATCH_SIZE,
+              (self.train_accuracy/len(t_label_train))*100, "%")
         # <test>
         self.net.eval()
         intersection_training = self.net(x)
-        intersection_training_out= torch.max(intersection_training,1)[1].item()
+        intersection_training_out = torch.max(
+            intersection_training, 1)[1].item()
 
+        self.buffer_list = torch.cat(
+            [self.buffer_list, intersection_training], dim=0)
+        bufferdata_train = torch.argmax(torch.sum(self.buffer_list, dim=0))
 
-        self.buffer_list = torch.cat([self.buffer_list,intersection_training],dim=0)
-        bufferdata_train = torch.argmax(torch.sum(self.buffer_list,dim=0))
-
-        self.writer.add_scalar("loss",loss,self.count)
+        self.writer.add_scalar("loss", loss, self.count)
         self.count += 1
-        if self.count >= self.buffer_size :
+        if self.count >= self.buffer_size:
             #self.buffer_list = self.buffer_list[1:]
-            self.buffer_list = torch.zeros(1,4).to(self.device)
-            self.count =0
+            self.buffer_list = torch.zeros(1, 4).to(self.device)
+            self.count = 0
 
         if self.first_flag:
-            self.writer.add_graph(self.net,(x))
+            self.writer.add_graph(self.net, (x))
             self.writer.close()
             self.writer.flush()
         # <reset dataset>
@@ -157,8 +161,8 @@ class deep_learning:
             self.first_flag = True
 
         # return intersection_training.item(), loss.item()
-        return intersection_training_out ,bufferdata_train, loss.item()
-        
+        return intersection_training_out, bufferdata_train, loss.item()
+
     def act(self, img):
         self.net.eval()
         # <make img(x_test_ten),cmd(c_test)>
@@ -168,17 +172,19 @@ class deep_learning:
         # print(x_test_ten.shape,x_test_ten.device,c_test.shape,c_test.device)
         # <test phase>
         intersection_test = self.net(x_test_ten)
-        print(intersection_test)
-        self.buffer_list = torch.cat([self.buffer_list,intersection_test],dim=0)
-        bufferdata_test = torch.argmax(torch.sum(self.buffer_list,dim=0))
+        # print(intersection_test)
+        self.buffer_list = torch.cat(
+            [self.buffer_list, intersection_test], dim=0)
+        bufferdata_test = torch.argmax(torch.sum(self.buffer_list, dim=0))
         #print("buffer_list" ,self.buffer_list, "shape", self.buffer_list.shape,"buffer_sum",bufferdata_test)
         self.count += 1
-        if self.count >= self.buffer_size :
+        if self.count >= self.buffer_size:
             #self.buffer_list = self.buffer_list[1:]
-            self.buffer_list = torch.zeros(1,4).to(self.device)
-            self.count =0
+            self.buffer_list = torch.zeros(1, 4).to(self.device)
+            self.count = 0
         # print("act = ", intersection_test)
-        return torch.max(intersection_test,1)[1],bufferdata_test #torch.max(bufferdata_test,1)[1]
+        # torch.max(bufferdata_test,1)[1]
+        return torch.max(intersection_test, 1)[1], bufferdata_test
 
     def result(self):
         accuracy = self.accuracy
@@ -193,6 +199,7 @@ class deep_learning:
     def load(self, load_path):
         # <model load>
         self.net.load_state_dict(torch.load(load_path))
+        print(load_path)
 
 
 if __name__ == '__main__':
