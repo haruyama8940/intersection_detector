@@ -143,7 +143,7 @@ class deep_learning:
             [self.buffer_list, intersection_training], dim=0)
         bufferdata_train = torch.argmax(torch.sum(self.buffer_list, dim=0))
 
-        self.writer.add_scalar("loss", loss, self.count)
+        # self.writer.add_scalar("loss", loss, self.count)
         self.count += 1
         if self.count >= self.buffer_size:
             #self.buffer_list = self.buffer_list[1:]

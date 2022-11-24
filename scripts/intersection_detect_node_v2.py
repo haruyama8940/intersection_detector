@@ -40,8 +40,8 @@ class intersection_detector_node:
         self.image_sub = rospy.Subscriber("/camera/rgb/image_raw", Image, self.callback)
         self.image_left_sub = rospy.Subscriber("/camera_left/rgb/image_raw", Image, self.callback_left_camera)
         self.image_right_sub = rospy.Subscriber("/camera_right/rgb/image_raw", Image, self.callback_right_camera)
-        self.srv = rospy.Service('/training', SetBool, self.callback_dl_training)
-        self.mode_save_srv = rospy.Service('/model_save', Trigger, self.callback_model_save)
+        self.srv = rospy.Service('/training_intersection', SetBool, self.callback_dl_training)
+        self.mode_save_srv = rospy.Service('/model_save_intersection', Trigger, self.callback_model_save)
         self.cmd_dir_sub = rospy.Subscriber("/cmd_dir_intersection", cmd_dir_intersection, self.callback_cmd,queue_size=1)
         self.min_distance = 0.0
         self.action = 0.0
@@ -70,9 +70,9 @@ class intersection_detector_node:
         self.start_time_s = rospy.get_time()
         os.makedirs(self.path + self.start_time)
 
-        with open(self.path + self.start_time + '/' +  'training.csv', 'w') as f:
-            writer = csv.writer(f, lineterminator='\n')
-            writer.writerow(['step', 'mode', 'loss', 'angle_error(rad)', 'distance(m)','x(m)','y(m)', 'the(rad)', 'direction'])
+        # with open(self.path + self.start_time + '/' +  'training.csv', 'w') as f:
+        #     writer = csv.writer(f, lineterminator='\n')
+        #     writer.writerow(['step', 'mode', 'loss', 'angle_error(rad)', 'distance(m)','x(m)','y(m)', 'the(rad)', 'direction'])
 
     def callback(self, data):
         try:
@@ -135,13 +135,13 @@ class intersection_detector_node:
         # cmd_dir = np.asanyarray(self.cmd_dir_data)
         ros_time = str(rospy.Time.now())
 
-        if self.episode == 0:
-            self.learning = False
-            # self.dl.save(self.save_path)
-            self.dl.load(self.load_path)
-            # print("load model: ",self.load_path)
+        # if self.episode == 0:
+        #     self.learning = False
+        #     self.dl.save(self.save_path)
+        #     self.dl.load(self.load_path)
+        #     print("load model: ",self.load_path)
         
-        if self.episode == 30000:
+        if self.episode == 40000:
             self.learning = False
             self.dl.save(self.save_path)
             #self.dl.load(self.load_path)
@@ -158,7 +158,7 @@ class intersection_detector_node:
             intersection_name = self.intersection_list[intersection]
             self.intersection.intersection_name = self.intersection_list[bufferdata]
             self.intersection_pub.publish(self.intersection)
-            print("learning: " + str(self.episode) + ", loss: " + str(loss) + ", label: " + str(intersection) + " , intersection_name: " + str(intersection_name)+" , buffer_name: " + str(self.intersection.data))
+            print("learning: " + str(self.episode) + ", loss: " + str(loss) + ", label: " + str(intersection) + " , intersection_name: " + str(intersection_name)+" , buffer_name: " + str(self.intersection.intersection_name))
             # print("learning: " + str(self.episode) + ", loss: " + str(loss) + ", label: " + str(intersection) + " , intersection_name: " + str(intersection_name) +", correct label: " + str(self.cmd_dir_data))
             # self.episode += 1
             # line = [str(self.episode), "training", str(loss), str(angle_error), str(distance), str(self.pos_x), str(self.pos_y), str(self.pos_the), str(self.cmd_dir_data)]
