@@ -8,7 +8,14 @@
 ネットワーク
 CNN３ ＋　全結合層２
 
+##INSTALL
+```
+git clone https://github.com/haruyama8940/intersection_detector.git
+git clone https://github.com/haruyama8940/scenario_navigation_msgs.git
+```
+
 ## RUN
+plase start simulation and
 ```
 roslaunch intersection_detector intersection_detect.launch 
 ```
