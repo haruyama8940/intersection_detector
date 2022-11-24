@@ -14,8 +14,10 @@
 ・CNN３ ＋　全結合層２  
 ・mobilenetv2
 ## Instll 
-https://github.com/haruyama8940/scenario_navigation_msgs.git
-https://github.com/haruyama8940/intersection_detector.git
+```
+git clone https://github.com/haruyama8940/scenario_navigation_msgs.git  
+git clone https://github.com/haruyama8940/intersection_detector.git
+```
 ## RUN
 ```
 roslaunch intersection_detector intersection_detect.launch 
