@@ -46,7 +46,10 @@ class Net(nn.Module):
     # <forward layer>
     def forward(self, x):
         x1 = self.v2_layer(x)
+        #(1,1280)
+        x1 = torch.unsqueeze(x1,dim=1)
         x2 = self.LSTM_OUT_layer(x1)
+        #(1,1280)
         x3 = torch.mean(x,dim=1)
         return x2
 
