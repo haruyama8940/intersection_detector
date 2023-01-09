@@ -28,14 +28,14 @@ MAX_DATA = 5000
 
 
 class Net(nn.Module):
-    def __init__(self, n_channel, n_out,input_size,hidden_size,batch_first):
+    def __init__(self, n_channel, n_out):
         super().__init__()
     # <Network CNN 3 + FC 2>
         v2 = models.mobilenet_v2()
         v2.classifier[1] = nn.Linear(
-            in_features=v2.last_channel, out_features=n_out)
-        self.lstm = nn.LSTM(input_size=input_size, hidden_size=hidden_size,batch_first=batch_first)
-        self.output_layer = nn.Linear(hidden_size,n_out)
+            in_features=v2.last_channel, out_features=v2.last_channel)
+        self.lstm = nn.LSTM(input_size=v2.last_channel, hidden_size=512, num_layers=1,batch_first=True)
+        self.output_layer = nn.Linear(512,n_out)
     # <CNN layer>
         self.v2_layer = v2
     # <LSTM + OUTPUT>
@@ -47,6 +47,7 @@ class Net(nn.Module):
     def forward(self, x):
         x1 = self.v2_layer(x)
         x2 = self.LSTM_OUT_layer(x1)
+        x3 = torch.mean(x,dim=1)
         return x2
 
 
@@ -112,10 +113,10 @@ class deep_learning:
         self.x_cat = torch.cat([self.x_cat, x], dim=0)
         self.t_cat = torch.cat([self.t_cat, t], dim=0)
 
-        # <make dataset>
+    # <make dataset>
         #print("train x =",self.x_cat.shape,x.device,"train t = " ,self.t_cat.shape,t.device)
         dataset = TensorDataset(self.x_cat, self.t_cat)
-        # <dataloader>
+    # <dataloader>
         # train_dataset = DataLoader(
         #     dataset, batch_size=BATCH_SIZE, generator=torch.Generator('cpu'), shuffle=True)
 
@@ -138,6 +139,9 @@ class deep_learning:
         #print("y = ",y_train.shape,"t=",t_label_train.shape)
         loss = self.criterion(y_train, t_label_train)
         loss.backward()
+        #clip loss =>2.0
+        nn.utils.clipgrad_value_(self.net.parameters(), clip_value=2.0)
+
         self.optimizer.step()
         # self.writer.add_scalar("loss",loss,self.count)
         self.train_accuracy += torch.sum(torch.max(y_train, 1)
