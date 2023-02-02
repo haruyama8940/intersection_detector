@@ -6,8 +6,10 @@
 
 
 ネットワーク
-CNN３ ＋　全結合層２
-
+時系列考慮なし
+1.CNN３ ＋　全結合層２
+時系列考慮あり（LRCN）
+2.mobilenetv2 + lstm + fc
 ## INSTALL
 ```
 git clone https://github.com/haruyama8940/intersection_detector.git
@@ -16,9 +18,11 @@ git clone https://github.com/haruyama8940/scenario_navigation_msgs.git
 
 ## RUN
 plase start simulation and
+1.のネットワーク
 ```
 roslaunch intersection_detector intersection_detect.launch 
 ```
-
-## TODO
-LSTMの導入
+2.のネットワーク
+```
+roslaunch intersection_detector intersection_detect_lrcn.launch 
+```
