@@ -17,7 +17,7 @@ git clone https://github.com/haruyama8940/scenario_navigation_msgs.git
 ```
 
 ## RUN
-plase start simulation and
+plase start simulation and  
 1.のネットワーク
 ```
 roslaunch intersection_detector intersection_detect.launch
