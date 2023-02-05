@@ -20,10 +20,10 @@ from torch.utils.tensorboard import SummaryWriter
 import random
 
 # HYPER PARAM
-BATCH_SIZE = 8
+BATCH_SIZE = 16
 MAX_DATA = 2000
 FRAME_SIZE = 9
-EPOCH_NUM = 100
+EPOCH_NUM = 20
 
 class Net(nn.Module):
     def __init__(self, n_channel, n_out):
@@ -58,10 +58,10 @@ class Net(nn.Module):
         lstm_out,_ = self.lstm(frameFeatures)
         #<lstm[B,1280]-> FC[B,4,512]>
         # class_out = self.output_layer(lstm_out[:,-1,:])
-        #print("lstm_out:",lstm_out.shape)
+        print("lstm_out:",lstm_out.shape)
         # for f in range(0,lstm_out.size()[0]):
         class_out = self.output_layer(lstm_out)
-        #print("class_out",class_out.shape)
+        print("class_out",class_out.shape)
         class_out =torch.mean(class_out,dim=1)
         #print("class_out_mean",class_out.shape)
         return class_out
@@ -100,6 +100,7 @@ class deep_learning:
         # self.criterion = nn.MSELoss()
         self.criterion = nn.CrossEntropyLoss()
         self.first_flag = True
+        self.first_test_flag = True
         self.first_time_flag = True
         torch.backends.cudnn.benchmark = False
         self.writer = SummaryWriter(log_dir='/home/rdclab/catkin_ws/src/intersection_detector/runs')
@@ -146,10 +147,11 @@ class deep_learning:
         # <self.t_cat (B,Size) = (8,4))>
         # self.t_cat = torch.cat([self.t_cat, t], dim=0)
         #print("x_cat:",self.x_ca
-        # t.shape,"t_cat",self.t_cat.shape)
+        
         if self.x_cat.size()[0] == FRAME_SIZE  and self.diff_flag ==False:
             # <self.x_cat_time (B,T,C,H,W) = (8,8,3,48,64))>
             print("make dataset")
+            print("t_data:",t)
             #print("x_cat_time:",self.x_cat_time.shape,"x_cat_sq:",self.x_cat.unsqueeze(0).shape)
             self.x_cat_time = torch.cat((self.x_cat_time, self.x_cat.unsqueeze(0)), dim=0)
             #<self.t_cat_time (B,T,Size) = (8,8,4)>
@@ -190,7 +192,7 @@ class deep_learning:
                 self.optimizer.zero_grad()
                 y_train = self.net(x_train)
                 loss_all = self.criterion(y_train, t_label_train)
-                print("y = ",y_train.shape,"t=",t_label_train.shape)
+                print("y = ",y_train.shape,"t=",t_label_train)
                 self.train_accuracy += torch.sum(torch.max(y_train, 1)
                                                     [1] == torch.max(t_label_train, 1)[1]).item()
                 print("epoch:",epoch, "accuracy :", self.train_accuracy, "/",len(t_label_train),
@@ -209,24 +211,28 @@ class deep_learning:
     def act(self, img):
         self.net.eval()
     # <to tensor img(x)>
-        if self.first_flag:
+        if self.first_test_flag:
             self.x_cat_test = torch.tensor(
                 img, dtype=torch.float32, device=self.device).unsqueeze(0)
             self.x_cat_test = self.x_cat_test.permute(0, 3, 1, 2)
-            self.first_flag = False
+            self.first_test_flag = False
         
         x = torch.tensor(
             img, dtype=torch.float32, device=self.device).unsqueeze(0)
         x = x.permute(0, 3, 1, 2)
         self.x_cat_test = torch.cat([self.x_cat_test, x], dim=0)
+        print("x_test_cat:",self.x_cat_test.shape)
         if self.x_cat_test.size()[0] == FRAME_SIZE:
             # self.x_cat_time_test = self.x_cat_test.unsqueeze(0)
             # torch.cat((self.x_cat_time, self.x_cat_test.unsqueeze(0)), dim=0)
-            self.first_flag = True    
+            #self.first_test_flag = True
+            self.intersection_test = self.net(self.x_cat_test.unsqueeze(0))
+            print("s:",self.intersection_test.shape)
+            self.x_cat_test = self.x_cat_test[1:]
         # print(x_test_ten.shape,x_test_ten.device,c_test.shape,c_test.device)
     # <test phase>
-            self.intersection_test = self.net(self.x_cat_test.unsqueeze(0))
-        print("s:",self.intersection_test.shape)
+            # self.intersection_test = self.net(self.x_cat_test.unsqueeze(0))
+        
         return torch.max(self.intersection_test, 1)[1].item()
 
     def result(self):
