@@ -11,7 +11,7 @@ from cv_bridge import CvBridge, CvBridgeError
 # from intersection_detect_LRCN import *
 # from intersection_detect_LRCN_no_buffer import *
 # from intersection_detect_LRCN_all import *
-from intersection_detect_LRCN_mean_off_diff_detailed import *
+from intersection_detect_LRCN_mean_off_diff_detailed_v3 import *
 from skimage.transform import resize
 from geometry_msgs.msg import Twist
 from geometry_msgs.msg import PoseArray
@@ -33,7 +33,7 @@ class intersection_detector_node:
     def __init__(self):
         rospy.init_node('intersection_detector_node', anonymous=True)
         self.class_num = 8
-        self.dl = deep_learning(n_action = self.class_num)
+        self.dl = deep_learning(class_num = self.class_num)
         self.bridge = CvBridge()
         # self.intersection_pub = rospy.Publisher("passage_type",String,queue_size=1)
         self.intersection_pub = rospy.Publisher("passage_type",cmd_dir_intersection,queue_size=1)
@@ -41,6 +41,8 @@ class intersection_detector_node:
         self.image_left_sub = rospy.Subscriber("/camera_left/rgb/image_raw", Image, self.callback_left_camera)
         self.image_right_sub = rospy.Subscriber("/camera_right/rgb/image_raw", Image, self.callback_right_camera)
         self.srv = rospy.Service('/training_intersection', SetBool, self.callback_dl_training)
+        self.loop_srv = rospy.Service('/loop_count', SetBool, self.callback_dl_training)
+        
         self.mode_save_srv = rospy.Service('/model_save_intersection', Trigger, self.callback_model_save)
         self.cmd_dir_sub = rospy.Subscriber("/cmd_dir_intersection", cmd_dir_intersection, self.callback_cmd,queue_size=1)
         self.min_distance = 0.0
@@ -59,9 +61,10 @@ class intersection_detector_node:
         self.path = roslib.packages.get_pkg_dir('intersection_detector') + '/data/result'
         self.save_path = roslib.packages.get_pkg_dir('intersection_detector') + '/data/lrcn'
         # self.load_path =roslib.packages.get_pkg_dir('intersection_detector') + '/data/mobilenetv2/model_gpu.pt'
-        self.load_path =roslib.packages.get_pkg_dir('intersection_detector') + '/data/lrcn_suc_10epoch/model_gpu.pt'
-        #self.load_path =roslib.packages.get_pkg_dir('intersection_detector') + '/data/lrcn_true_label_100epoch/model_gpu.pt'
-        #self.load_path =roslib.packages.get_pkg_dir('intersection_detector') + '/data/model20221006_16:44:57/model_gpu.pt'
+        # self.load_path =roslib.packages.get_pkg_dir('intersection_detector') + '/data/lrcn_suc_10epoch/model_gpu.pt'
+        # self.load_path =roslib.packages.get_pkg_dir('intersection_detector') + '/data/lrcn_3loop_70ep_10f_num2/model_gpu.pt'
+        self.load_path =roslib.packages.get_pkg_dir('intersection_detector') + '/data/lrcn_3loop_70ep_num2_v3_add_2/model_gpu.pt'
+        # self.load_path =roslib.packages.get_pkg_dir('intersection_detector') + '/data/lrcn_add_1/model_gpu.pt'
         # self.load_path =roslib.packages.get_pkg_dir('intersection_detector') + '/data/lrcn12000_100epoch_real/model_gpu.pt'
         # self.load_path =roslib.packages.get_pkg_dir('intersection_detector') + '/data/lrcn12000_100epoch_sim/model_gpu.pt'
         self.previous_reset_time = 0
@@ -128,6 +131,7 @@ class intersection_detector_node:
         if self.cv_right_image.size != 640 * 480 * 3:
             return
         img = resize(self.cv_image, (48, 64), mode='constant')
+        # img = resize(self.cv_image, (224, 224), mode='constant')
         
         # rospy.loginfo("start")
         # r, g, b = cv2.split(img)
@@ -143,10 +147,10 @@ class intersection_detector_node:
         # cmd_dir = np.asanyarray(self.cmd_dir_data)
         ros_time = str(rospy.Time.now())
 
-        # if self.episode == 0:
-        #     self.learning = False
-        #     self.dl.load(self.load_path)
-        #     print("load model: ",self.load_path)
+        if self.episode == 0:
+            self.learning = False
+            self.dl.load(self.load_path)
+            print("load model: ",self.load_path)
         
         # if self.episode == 5000:
         #     self.learning = False
@@ -178,7 +182,7 @@ class intersection_detector_node:
             # with open(self.path + self.start_time + '/' + 'training.csv', 'a') as f:
             #     writer = csv.writer(f, lineterminator='\n')
             #     writer.writerow(line)
-            #self.episode += 1
+            self.episode += 1
             if self.start_learning:
                 # dataset ,dataset_num,train_dataset =self.dl.make_dataset(img,self.cmd_dir_data)
                 # self.dl.training(train_dataset)
@@ -192,7 +196,7 @@ class intersection_detector_node:
 
         else:
             # print('\033[32m'+'test_mode'+'\033[0m')
-            intersection = self.dl.act(img)
+            intersection = self.dl.test(img)
             intersection_name = self.intersection_list[intersection]
             self.intersection.intersection_name = self.intersection_list[intersection]
             print(self.intersection.intersection_name)
@@ -217,8 +221,9 @@ class intersection_detector_node:
 
 if __name__ == '__main__':
     rg = intersection_detector_node()
-    DURATION = 0.2
-    r = rospy.Rate(1 / DURATION)
+    # DURATION = 0.1
+    # r = rospy.Rate(1 / DURATION)
+    r= rospy.Rate(5.0)
     while not rospy.is_shutdown():
         rg.loop()
         r.sleep()
