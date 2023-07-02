@@ -20,10 +20,11 @@ from torch.utils.tensorboard import SummaryWriter
 import random
 
 # HYPER PARAM
-BATCH_SIZE = 16
+BATCH_SIZE = 32
 MAX_DATA = 2000
-FRAME_SIZE = 10
-EPOCH_NUM = 70
+# FRAME_SIZE = 10
+FRAME_SIZE = 16
+EPOCH_NUM = 200
 
 class Net(nn.Module):
     def __init__(self, n_channel, n_out):
@@ -85,7 +86,8 @@ class deep_learning:
         #self.optimizer = torch.optim.SGD(self.net.parameters(),lr=0.003,momentum=0.9)
         # self.optimizer.setup(self.net.parameters())
         self.totensor = transforms.ToTensor()
-        self.transform_train = transforms.Compose([transforms.RandomRotation(15),
+        #
+        self.transform_train = transforms.Compose([transforms.RandomRotation(10),
                                                    transforms.ColorJitter(brightness=0.3, saturation=0.3)])
         self.normalization = transforms.Compose([transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
 
@@ -199,8 +201,10 @@ class deep_learning:
                 x_train = x_train.to(self.device,non_blocking=True)
                 t_label_train = t_label_train.to(self.device, non_blocking=True)
         # <use transform>
-            # x_train = self.transform_color(x_train)
-            #x_train = self.transform_train(x_train)
+                # print("ddd=",x_train[0,:,:,:,:].shape)
+            # for i in range(BATCH_SIZE):
+                # x_train = self.transform_color(x_train)
+                # self.transform_train(x_train[i,:,:,:,:])
                 # x_train =self.normalization(x_train)
         # <learning>
                 self.optimizer.zero_grad()

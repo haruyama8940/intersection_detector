@@ -22,8 +22,8 @@ import random
 # HYPER PARAM
 BATCH_SIZE = 16
 MAX_DATA = 2000
-FRAME_SIZE = 9
-EPOCH_NUM = 20
+FRAME_SIZE = 10
+EPOCH_NUM = 70
 
 class Net(nn.Module):
     def __init__(self, n_channel, n_out):
@@ -34,7 +34,7 @@ class Net(nn.Module):
             in_features=1280, out_features=1280)
     #<LSTM + OUTPUT>
         self.lstm = nn.LSTM(input_size=1280,
-                            hidden_size=512, num_layers=1, batch_first=True)
+                            hidden_size=512, num_layers=2, batch_first=True)
         self.output_layer = nn.Linear(512, n_out)
     # <CNN layer>
         self.v2_layer = v2
@@ -68,11 +68,11 @@ class Net(nn.Module):
 
 
 class deep_learning:
-    def __init__(self, n_channel=3, n_action=8):
+    def __init__(self, n_channel=3, class_num=8):
         # <tensor device choice>
         self.device = torch.device(
             'cuda' if torch.cuda.is_available() else 'cpu')
-        self.net = Net(n_channel, n_action)
+        self.net = Net(n_channel, class_num)
         self.net.to(self.device)
         print(self.device)
         print("mobilenetv2 + LSTM = LRCN_all")
@@ -84,10 +84,11 @@ class deep_learning:
         self.totensor = transforms.ToTensor()
         self.transform_train = transforms.Compose([transforms.RandomRotation(15),
                                                    transforms.ColorJitter(brightness=0.3, saturation=0.3)])
+        self.normalization = transforms.Compose([transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
 
         self.transform_color = transforms.ColorJitter(
             brightness=0.5, contrast=0.5, saturation=0.5)
-        self.n_action = n_action
+        self.class_num = class_num
         self.count = 0
         self.accuracy = 0
         self.results_train = {}
@@ -112,7 +113,7 @@ class deep_learning:
         self.diff_flag = False
 
     def make_dataset(self, img, intersection_label):
-        self.device = torch.device('cpu')
+        # self.device = torch.device('cpu')
         if self.first_flag:
             self.x_cat = torch.tensor(
                 img, dtype=torch.float32, device=self.device).unsqueeze(0)
@@ -121,6 +122,7 @@ class deep_learning:
                 [intersection_label], dtype=torch.float32, device=self.device)
             if self.first_time_flag:
                 self.x_cat_time = torch.zeros(1,FRAME_SIZE,3,48,64).to(self.device) 
+                # self.x_cat_time = torch.zeros(1,FRAME_SIZE,3,224,224).to(self.device) 
                 self.t_cat_time = torch.clone(self.t_cat)
             # torch.zeros(1,FRAME_SIZE,4).to(self.device)
 
@@ -134,6 +136,8 @@ class deep_learning:
         # <(t dim [4]) -> [1,4] >
         t = torch.tensor([intersection_label], dtype=torch.float32,
                          device=self.device)
+         # print('\033[32m'+'test_mode'+'\033[0m')
+        print(self.old_label)
         if intersection_label == self.old_label:
             self.diff_flag = False
             self.x_cat = torch.cat([self.x_cat, x], dim=0)
@@ -169,12 +173,12 @@ class deep_learning:
 
     def load_dataset(self,dataset):
         train_dataset = DataLoader(
-            dataset, batch_size=BATCH_SIZE, generator=torch.Generator('cpu'), shuffle=False,num_workers=2)
+            dataset, batch_size=BATCH_SIZE, generator=torch.Generator('cpu'), shuffle=False)
     
         return train_dataset
     
     def training(self, train_dataset):
-        self.device = torch.device('cuda')
+        # self.device = torch.device('cuda')
         print(self.device)
     # <training mode>
         self.net.train()
@@ -194,6 +198,7 @@ class deep_learning:
         # <use transform>
             # x_train = self.transform_color(x_train)
             #x_train = self.transform_train(x_train)
+                # x_train =self.normalization(x_train)
         # <learning>
                 self.optimizer.zero_grad()
                 y_train = self.net(x_train)

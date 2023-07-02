@@ -37,9 +37,12 @@ class intersection_detector_node:
         self.bridge = CvBridge()
         # self.intersection_pub = rospy.Publisher("passage_type",String,queue_size=1)
         self.intersection_pub = rospy.Publisher("passage_type",cmd_dir_intersection,queue_size=1)
-        self.image_sub = rospy.Subscriber("/camera/rgb/image_raw", Image, self.callback)
-        self.image_left_sub = rospy.Subscriber("/camera_left/rgb/image_raw", Image, self.callback_left_camera)
-        self.image_right_sub = rospy.Subscriber("/camera_right/rgb/image_raw", Image, self.callback_right_camera)
+        # self.image_sub = rospy.Subscriber("/camera_center/image_raw", Image, self.callback)
+        # self.image_sub = rospy.Subscriber("/image_center", Image, self.callback)
+        # self.image_sub = rospy.Subscriber("/image_left", Image, self.callback)
+        self.image_sub = rospy.Subscriber("/image_right", Image, self.callback)
+        # self.image_left_sub = rospy.Subscriber("/camera_left/rgb/image_raw", Image, self.callback_left_camera)
+        # self.image_right_sub = rospy.Subscriber("/camera_right/rgb/image_raw", Image, self.callback_right_camera)
         self.srv = rospy.Service('/training_intersection', SetBool, self.callback_dl_training)
         self.loop_srv = rospy.Service('/loop_count', SetBool, self.callback_dl_training)
         
@@ -58,12 +61,16 @@ class intersection_detector_node:
         self.start_learning = False
         self.select_dl = False
         self.start_time = time.strftime("%Y%m%d_%H:%M:%S")
-        self.path = roslib.packages.get_pkg_dir('intersection_detector') + '/data/result'
-        self.save_path = roslib.packages.get_pkg_dir('intersection_detector') + '/data/lrcn'
+        # self.path = roslib.packages.get_pkg_dir('intersection_detector') + '/data/result'
+        self.save_path = roslib.packages.get_pkg_dir('intersection_detector') + '/data/lrcn/real/frame16/hz8/200ep/'
         # self.load_path =roslib.packages.get_pkg_dir('intersection_detector') + '/data/mobilenetv2/model_gpu.pt'
         # self.load_path =roslib.packages.get_pkg_dir('intersection_detector') + '/data/lrcn_suc_10epoch/model_gpu.pt'
         # self.load_path =roslib.packages.get_pkg_dir('intersection_detector') + '/data/lrcn_3loop_70ep_10f_num2/model_gpu.pt'
-        self.load_path =roslib.packages.get_pkg_dir('intersection_detector') + '/data/lrcn_3loop_70ep_num2_v3_add_2/model_gpu.pt'
+        
+        #hayper!!!
+        # self.load_path =roslib.packages.get_pkg_dir('intersection_detector') + '/data/lrcn_3loop_70ep_num2_v3_add_2/model_gpu.pt'
+        self.load_path =roslib.packages.get_pkg_dir('intersection_detector') + '/data/lrcn/real/frame16/hz8/200ep/0530_center_1_left_1/model_gpu.pt'
+        
         # self.load_path =roslib.packages.get_pkg_dir('intersection_detector') + '/data/lrcn_add_1/model_gpu.pt'
         # self.load_path =roslib.packages.get_pkg_dir('intersection_detector') + '/data/lrcn12000_100epoch_real/model_gpu.pt'
         # self.load_path =roslib.packages.get_pkg_dir('intersection_detector') + '/data/lrcn12000_100epoch_sim/model_gpu.pt'
@@ -76,7 +83,7 @@ class intersection_detector_node:
         self.intersection_list = ["straight_road","dead_end","corner_right","corner_left","cross_road","3_way_right","3_way_center","3_way_left"]
         #self.cmd_dir_data = [0, 0, 0]
         self.start_time_s = rospy.get_time()
-        os.makedirs(self.path + self.start_time)
+        # os.makedirs(self.path + self.start_time)
 
         self.target_dataset = 12000
         print("target_dataset :" , self.target_dataset)
@@ -86,21 +93,24 @@ class intersection_detector_node:
 
     def callback(self, data):
         try:
-            self.cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
+            # self.cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
+            self.cv_image = self.bridge.imgmsg_to_cv2(data, "rgb8")
         except CvBridgeError as e:
             print(e)
 
-    def callback_left_camera(self, data):
-        try:
-            self.cv_left_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
-        except CvBridgeError as e:
-            print(e)
+    # def callback_left_camera(self, data):
+    #     try:
+    #         # self.cv_left_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
+    #         self.cv_left_image = self.bridge.imgmsg_to_cv2(data, "rgb8")
+    #     except CvBridgeError as e:
+    #         print(e)
 
-    def callback_right_camera(self, data):
-        try:
-            self.cv_right_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
-        except CvBridgeError as e:
-            print(e)
+    # def callback_right_camera(self, data):
+    #     try:
+    #         # self.cv_right_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
+    #         self.cv_right_image = self.bridge.imgmsg_to_cv2(data, "rgb8")
+    #     except CvBridgeError as e:
+    #         print(e)
 
 
     def callback_cmd(self, data):
@@ -126,10 +136,10 @@ class intersection_detector_node:
     def loop(self):
         if self.cv_image.size != 640 * 480 * 3:
             return
-        if self.cv_left_image.size != 640 * 480 * 3:
-            return
-        if self.cv_right_image.size != 640 * 480 * 3:
-            return
+        # if self.cv_left_image.size != 640 * 480 * 3:
+        #     return
+        # if self.cv_right_image.size != 640 * 480 * 3:
+        #     return
         img = resize(self.cv_image, (48, 64), mode='constant')
         # img = resize(self.cv_image, (224, 224), mode='constant')
         
@@ -148,7 +158,7 @@ class intersection_detector_node:
         ros_time = str(rospy.Time.now())
 
         if self.episode == 0:
-            self.learning = False
+            # self.learning = False
             self.dl.load(self.load_path)
             print("load model: ",self.load_path)
         
@@ -223,7 +233,8 @@ if __name__ == '__main__':
     rg = intersection_detector_node()
     # DURATION = 0.1
     # r = rospy.Rate(1 / DURATION)
-    r= rospy.Rate(5.0)
+    # r= rospy.Rate(5.0)
+    r = rospy.Rate(8.0)
     while not rospy.is_shutdown():
         rg.loop()
         r.sleep()
