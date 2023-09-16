@@ -1,0 +1,4 @@
+<?xml version="1.0"?>
+<launch>
+    <node pkg="intersection_detector" type="create_dataset_lstm.py" name="create_node" output="screen"/>
+</launch>
