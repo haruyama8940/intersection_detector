@@ -10,7 +10,7 @@ from cv_bridge import CvBridge, CvBridgeError
 # from intersection_detect_LRCN import *
 # from intersection_detect_LRCN_no_buffer import *
 # from intersection_detect_LRCN_all import *
-from bag2torch import *
+from bag2torch_lstm import *
 from skimage.transform import resize
 from geometry_msgs.msg import Twist
 from geometry_msgs.msg import PoseArray
@@ -26,6 +26,7 @@ import os
 import time
 import sys
 import tf
+import glob
 from nav_msgs.msg import Odometry
 
 class intersection_detector_node:
@@ -37,12 +38,13 @@ class intersection_detector_node:
         # self.intersection_pub = rospy.Publisher("passage_type",String,queue_size=1)
         self.intersection_pub = rospy.Publisher("passage_type",cmd_dir_intersection,queue_size=1)
         # self.image_sub = rospy.Subscriber("/camera_center/image_raw", Image, self.callback)
-        self.image_sub = rospy.Subscriber("/image_center", Image, self.callback)
+        # self.image_sub = rospy.Subscriber("/image_center", Image, self.callback)
         # self.image_sub = rospy.Subscriber("/image_left", Image, self.callback)
-        # self.image_sub = rospy.Subscriber("/image_right", Image, self.callback)
+        self.image_sub = rospy.Subscriber("/image_right", Image, self.callback)
         # self.image_left_sub = rospy.Subscriber("/camera_left/rgb/image_raw", Image, self.callback_left_camera)
         # self.image_right_sub = rospy.Subscriber("/camera_right/rgb/image_raw", Image, self.callback_right_camera)
         self.srv = rospy.Service('/training_intersection', SetBool, self.callback_dl_training)
+
         self.loop_srv = rospy.Service('/loop_count', SetBool, self.callback_dl_training)
         
         # self.mode_save_srv = rospy.Service('/model_save_intersection', Trigger, self.callback_model_save)
@@ -57,12 +59,73 @@ class intersection_detector_node:
         self.cv_left_image = np.zeros((480,640,3), np.uint8)
         self.cv_right_image = np.zeros((480,640,3), np.uint8)
         self.learning = True
+
         self.save_tensor_flag = False
+        self.cat_tensor_flag = True
         self.select_dl = False
         self.start_time = time.strftime("%Y%m%d_%H:%M:%S")
         # self.path = roslib.packages.get_pkg_dir('intersection_detector') + '/data/result'
-        self.save_image_path = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/image/'
-        self.save_label_path = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/label/'
+        # self.save_image_path = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/lrcn/image/add/re_cat/'
+        self.save_label_path = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/lrcn/label/add/re_cat/'
+        self.save_image_path ='/home/rdclab/Data/tensor/intersection_detactor/dataset/lrcn/image/re_cat/' 
+        # self.save_label_path = 'home/rdclab/Data/tensor/intersection_detactor/dataset/lrcn/label/re_cat/'
+        
+        self.load_image_folder_path = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/lrcn/image/add/re_cat/*/'
+        self.load_label_folder_path = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/lrcn/label/add/re_cat/*/'
+        
+        name_1 = "blind"
+        # name_1 = "right"
+        name_2 = "add_area_re"
+        name_3 = "ele_dai_temae_go"
+        # name_1 = "dai_temae_howaie_migi"
+        # name_2 = "dai_temae_migi_2"
+        # name_3 = "dead_end_1"
+
+        self.load_image_path_1 = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/lrcn/image/add/re_cat/'+ name_1+'/image.pt'
+        self.load_label_path_1 = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/lrcn/label/add/re_cat/'+name_1+'/label.pt'
+        self.load_image_path_2 = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/lrcn/image/add/re_cat/'+ name_2+'/image.pt'
+        self.load_label_path_2 = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/lrcn/label/add/re_cat/'+name_2+'/label.pt'
+        self.load_image_path_3 = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/lrcn/image/add/re_cat/'+ name_3+'/image.pt'
+        self.load_label_path_3 = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/lrcn/label/add/re_cat/'+name_3+'/label.pt'
+
+        # self.load_image_path_1 = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/lrcn/image/add/re_cat/'+ name_1+'/image.pt'
+        # self.load_label_path_1 = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/lrcn/label/add/re_cat/'+name_1+'/label.pt'
+        # self.load_image_path_2 = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/lrcn/image/add/re_cat/'+ name_2+'/image.pt'
+        # self.load_label_path_2 = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/lrcn/label/add/re_cat/'+name_2+'/label.pt'
+        # self.load_image_path_3 = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/lrcn/image/add/re_cat/'+ name_3+'/image.pt'
+        # self.load_label_path_3 = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/lrcn/label/add/re_cat/'+name_3+'/label.pt'
+
+        # self.load_image_path_1 = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/lrcn/image/image_center_blind/image.pt'
+        # self.load_label_path_1 = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/lrcn/label/center_label_blind/label.pt'
+
+        # self.load_image_path_2 = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/lrcn/image/image_left_blind/image.pt'
+        # self.load_label_path_2 = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/lrcn/label/left_label_blind/label.pt'
+        
+        # self.load_image_path_3 = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/lrcn/image/image_right_blind/image.pt'
+        # self.load_label_path_3 = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/lrcn/label/right_label_blind/label.pt'
+
+        # self.load_image_path_1 = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/lrcn/image/add/re_cat/right/image.pt'
+        # self.load_label_path_1 = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/lrcn/label/add/re_cat//right/label.pt'
+        
+        # self.load_image_path_1 = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/lrcn/image/add/re_cat/blind/image.pt'
+        # self.load_label_path_1 = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/lrcn/label/add/re_cat/blind/label.pt'
+        # self.load_image_path_2 = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/lrcn/image/add/re_cat/ele_dai_temae_go/image.pt'
+        # self.load_label_path_2 = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/lrcn/label/add/re_cat/ele_dai_temae_go/label.pt'
+        
+        # self.load_image_path_3 = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/lrcn/image/add/re_cat/add_area/image.pt'
+        # self.load_label_path_3 = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/lrcn/label/add/re_cat/add_area/label.pt'
+
+        # name_1 = "blind"
+        # name_2 = "add_area"
+        # self.load_image_path_1 = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/lrcn/image/add/re_cat/'+ name_1+'/image.pt'
+        # self.load_label_path_1 = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/lrcn/label/add/re_cat/'+name_1+'/label.pt'
+        # self.load_image_path_2 = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/lrcn/image/add/re_cat/'+ name_2+'/image.pt'
+        # self.load_label_path_2 = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/lrcn/label/add/re_cat/'+name_2+'/label.pt'
+        # self.load_image_folder_path = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/lrcn/image/add_left/*/'
+        # self.load_label_folder_path = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/lrcn/label/add_left/*/'
+
+        # self.load_image_folder_path = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/lrcn/image/add_right/*/'
+        # self.load_label_folder_path = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/lrcn/label/add_right/*/'
         
         self.previous_reset_time = 0
         self.pos_x = 0.0
@@ -171,6 +234,22 @@ class intersection_detector_node:
             sys.exit()
         else :
             pass
+        if self.cat_tensor_flag:
+            # cat_image_tensor ,cat_label_tensor = self.b2t.cat_tensor_folder(self.load_image_folder_path,self.load_label_folder_path)
+            # cat_image_tensor ,cat_label_tensor = self.b2t.load_path_tensor(self.load_image_folder_path, self.load_label_folder_path)
+            print("3_file")
+            cat_image_tensor,cat_label_tensor = self.b2t.cat_tensor(self.load_image_path_1,self.load_image_path_2,self.load_image_path_3,
+                                                                    self.load_label_path_1,self.load_label_path_2,self.load_label_path_3)
+            # print("2_file")
+            # cat_image_tensor,cat_label_tensor = self.b2t.cat_tensor_2(self.load_image_path_1,self.load_image_path_2,
+            #                                                         self.load_label_path_1,self.load_label_path_2)
+            self.b2t.save_bagfile(cat_image_tensor,self.save_image_path,'/image.pt')
+            self.b2t.save_bagfile(cat_label_tensor,self.save_label_path, '/label.pt')
+            print(self.save_image_path)
+            print(self.save_label_path)
+            os.system('killall roslaunch')
+            sys.exit()
+
 
 
 if __name__ == '__main__':
