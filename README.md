@@ -25,18 +25,30 @@ git clone https://github.com/haruyama8940/scenario_navigation_msgs.git
 ```
 
 ## RUN
-### Create Dataset
+### 1. Create Dataset
 データセットの作成はオンラインで作成する方法と  
+
 rosbagを用いてオフラインで作成する方法があります．  
+#### rosbagから作成する方法
 1.のネットワーク
 ```
 roslaunch intersection_detector create_dataset.launch
+```
+```
+cd launch/
+chmod +x lerning_intersection.sh
+./lerning_intersection.sh
 ```
 2.のネットワーク
 ```
 roslaunch intersection_detector create_dataset_lstm.launch
 ```
-### Learning
+```
+cd launch/
+chmod +x lerning_intersection.sh
+./lerning_intersection.sh
+```
+### 2. Learning
 1.のネットワーク
 ```
 rosrun intersection_detactor learning2tensor.py
@@ -45,7 +57,7 @@ rosrun intersection_detactor learning2tensor.py
 ```
 rosrun intersection_detactor learning2tensor_lstm.py
 ```
-### Detect
+### 3. Detect
 1.のネットワーク
 ```
 roslaunch intersection_detector intersection_detect.launch
