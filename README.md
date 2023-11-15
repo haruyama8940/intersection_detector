@@ -23,11 +23,14 @@ https://ieeexplore.ieee.org/document/8206317
 git clone https://github.com/haruyama8940/intersection_detector.git
 git clone https://github.com/haruyama8940/scenario_navigation_msgs.git
 ```
+compress形式でbagをとっている場合は次のリポジトリも取得してください
+```
+https://github.com/haruyama8940/camera_tools.git
+```
 
 ## RUN
 ### 1. Create Dataset
 データセットの作成はオンラインで作成する方法と  
-
 rosbagを用いてオフラインで作成する方法があります．  
 #### rosbagから作成する方法
 1.のネットワーク
@@ -58,6 +61,11 @@ rosrun intersection_detactor learning2tensor.py
 rosrun intersection_detactor learning2tensor_lstm.py
 ```
 ### 3. Detect
+compress形式でbagをとっている場合で解凍しながら再生してください
+```
+roslaunch camera_tools republush_camera.launch
+```
+
 1.のネットワーク
 ```
 roslaunch intersection_detector intersection_detect.launch
