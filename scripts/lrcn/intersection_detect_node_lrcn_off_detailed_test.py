@@ -72,14 +72,8 @@ class intersection_detector_node:
         #hyper
         # self.load_path =roslib.packages.get_pkg_dir('intersection_detector') + '/data/model/lrcn/real/frame16/hz8/30ep/0628_all/model_gpu.pt'
         
-        
-        # self.load_path =roslib.packages.get_pkg_dir('intersection_detector') + '/data/model/lrcn/real/frame16/hz8/30ep/0702_color_all_balance_weight/model_gpu.pt'
-        # self.load_path =roslib.packages.get_pkg_dir('intersection_detector') + '/data/model/lrcn/real/frame16/hz8/30ep/0707_bright_dark_all/model_gpu.pt'
-        self.load_path =roslib.packages.get_pkg_dir('intersection_detector') + '/data/model/lrcn/real/frame16/hz8/30ep/0911_re/model_gpu.pt'
-        # self.load_path =roslib.packages.get_pkg_dir('intersection_detector') + '/data/model/lrcn/real/frame16/hz8/30ep/0626_balance_right/model_gpu.pt'
-        # self.load_path =roslib.packages.get_pkg_dir('intersection_detector') + '/data/lrcn_add_1/model_gpu.pt'
-        # self.load_path =roslib.packages.get_pkg_dir('intersection_detector') + '/data/lrcn12000_100epoch_real/model_gpu.pt'
-        # self.load_path =roslib.packages.get_pkg_dir('intersection_detector') + '/data/lrcn12000_100epoch_sim/model_gpu.pt'
+        self.load_path =roslib.packages.get_pkg_dir('intersection_detector') + '/data/model/lrcn/real/frame16/hz8/30ep/0904_right_blind_add/model_gpu.pt'
+       
         self.previous_reset_time = 0
         self.pos_x = 0.0
         self.pos_y = 0.0
