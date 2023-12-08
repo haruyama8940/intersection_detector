@@ -58,13 +58,22 @@ class intersection_detector_node:
         self.cv_right_image = np.zeros((480,640,3), np.uint8)
         self.learning = True
         self.save_tensor_flag = False
+        self.cat_tensor_flag = True
         self.select_dl = False
         self.start_time = time.strftime("%Y%m%d_%H:%M:%S")
         # self.path = roslib.packages.get_pkg_dir('intersection_detector') + '/data/result'
         # self.save_image_path = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/image/single/'
         # self.save_label_path = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/label/single/'
-        self.save_image_path = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/image/lrcn/08'
-        self.save_label_path = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/label/lrcn/08'
+        self.save_image_path = '/home/rdclab/Data/tensor/intersection_detactor/dataset/single/light_dark/image/'
+        self.save_label_path = '/home/rdclab/Data/tensor/intersection_detactor/dataset/single/light_dark/label/'
+
+        self.load_image_tensor_1 = '/home/rdclab/Data/tensor/intersection_detactor/dataset/single/dark/image/center/image.pt'
+        self.load_image_tensor_2 = '/home/rdclab/Data/tensor/intersection_detactor/dataset/single/dark/image/right/image.pt'
+        self.load_image_tensor_3 = '/home/rdclab/Data/tensor/intersection_detactor/dataset/single/dark/image/left/image.pt' 
+        self.load_label_tensor_1 = '/home/rdclab/Data/tensor/intersection_detactor/dataset/single/dark/label/center/label.pt'
+        self.load_label_tensor_2 = '/home/rdclab/Data/tensor/intersection_detactor/dataset/single/dark/label/right/label.pt'
+        self.load_label_tensor_3 = '/home/rdclab/Data/tensor/intersection_detactor/dataset/single/dark/label/left/label.pt'
+
         self.previous_reset_time = 0
         self.pos_x = 0.0
         self.pos_y = 0.0
@@ -159,6 +168,17 @@ class intersection_detector_node:
         # with open(self.path + self.start_time + '/' + 'training.csv', 'a') as f:
         #     writer = csv.writer(f, lineterminator='\n')
         #     writer.writerow(line)
+        if self.cat_tensor_flag:
+            image_tensor,label_tensor=self.b2t.cat_tensor(self.load_image_tensor_1,self.load_image_tensor_2,self.load_image_tensor_3,
+                                                          self.load_label_tensor_1,self.load_label_tensor_2,self.load_label_tensor_3)
+            self.b2t.save_bagfile(image_tensor,self.save_image_path,'/image.pt')
+            self.b2t.save_bagfile(label_tensor,self.save_label_path, '/label.pt')
+            print(image_tensor.shape)
+            print(label_tensor.shape)
+            print(self.save_image_path)
+            print(self.save_label_path)
+            os.system('killall roslaunch')
+            sys.exit()
         if self.save_tensor_flag:
             # dataset ,dataset_num,train_dataset =self.dl.make_dataset(img,self.cmd_dir_data)
             # self.dl.training(train_dataset)

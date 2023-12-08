@@ -36,12 +36,15 @@ class Net(nn.Module):
     def __init__(self, n_channel, n_out):
         super().__init__()
     # <Network CNN 3 + FC 2>
-        v2 = models.mobilenet_v2()
-        v2.classifier[1] = nn.Linear(
-            in_features=v2.last_channel, out_features=n_out)
+    #     v2 = models.mobilenet_v2()
+    #     v2.classifier[1] = nn.Linear(
+    #         in_features=v2.last_channel, out_features=n_out)
+    # # <CNN layer>
+    #     self.v2_layer = v2
+        v3 = models.mobilenet_v3_large(weights='IMAGENET1K_V1')
+        v3.classifier[-1]= nn.Linear(in_features=1280, out_features = n_out)
     # <CNN layer>
-        self.v2_layer = v2
-
+        self.v3_layer = v3
     # <forward layer>
     def forward(self, x):
         class_out = self.v2_layer(x)
