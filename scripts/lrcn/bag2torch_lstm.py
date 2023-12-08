@@ -123,6 +123,7 @@ class bag_to_tensor:
 
     def make_dataset(self, img, intersection_label):
         # self.device = torch.device('cpu')
+        # make tensor(T,C,H,W)
         if self.first_flag:
             self.x_cat = torch.tensor(
                 img, dtype=torch.float32, device=self.device).unsqueeze(0)
@@ -137,16 +138,16 @@ class bag_to_tensor:
 
             self.first_flag = False
             self.first_time_flag = False
-    # <to tensor img(x),intersection_label(t)>
+        # <to tensor img(x),intersection_label(t)>
         x = torch.tensor(img, dtype=torch.float32,
                          device=self.device).unsqueeze(0)
-        # <(Batch,H,W,Channel) -> (Batch ,Channel, H,W)>
+        # <(T,H,W,Channel) -> (T ,Channel, H,W)>
         x = x.permute(0, 3, 1, 2)
         # <(t dim [4]) -> [1,4] >
         t = torch.tensor([intersection_label], dtype=torch.float32,
                          device=self.device)
-         # print('\033[32m'+'test_mode'+'\033[0m')
         print(self.old_label)
+        #<>
         if intersection_label == self.old_label:
             self.diff_flag = False
             self.x_cat = torch.cat([self.x_cat, x], dim=0)
@@ -157,9 +158,8 @@ class bag_to_tensor:
             print("change label")
         # <self.x_cat (B,C,H,W) = (8,3,48,64))>
         self.old_label = intersection_label
-        # <self.t_cat (B,Size) = (8,4))>
-        # self.t_cat = torch.cat([self.t_cat, t], dim=0)
-        #print("x_cat:",self.x_cat)
+       
+        #<add tensor(B,C,H,W) to dateset_tensor(B,T,C,H,W)>
         if self.x_cat.size()[0] == FRAME_SIZE  and self.diff_flag ==False:
             # <self.x_cat_time (B,T,C,H,W) = (8,8,3,48,64))>
             print("make dataset")
@@ -294,7 +294,13 @@ class bag_to_tensor:
         print("cat_label_tensor:",cat_label_tensor.shape)
 
         return cat_image_tensor, cat_label_tensor
-
+    def tensor_info(self, load_x_tensor,load_t_tensor):
+        print(self.device)
+        load_x_tensor = torch.load(load_x_tensor)
+        load_t_tensor = torch.load(load_t_tensor)
+        print("x_tensor:",load_x_tensor.shape,"t_tensor:",load_t_tensor.shape)
+        print("label info :",torch.sum(load_t_tensor ,dim=0))
+        
     def cat_training(self, load_x_tensor,load_t_tensor,load_flag):
         # self.device = torch.device('cuda')
         print(self.device)

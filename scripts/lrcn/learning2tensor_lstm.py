@@ -113,9 +113,11 @@ class intersection_detector_node:
 
         # self.load_image_path = '/home/rdclab/Data/tensor/intersection_detactor/dataset/lrcn/image/re_cat/right_add_area_re_ele_dai_temae_go/image.pt'
         # self.load_label_path = '/home/rdclab/Data/tensor/intersection_detactor/dataset/lrcn/label/re_cat/right_add_area_re_ele_dai_temae_go/label.pt'
-        self.load_image_path = '/home/rdclab/Data/tensor/intersection_detactor/dataset/lrcn/image/re_cat/right_add_area_re_ele_dai_temae_go/image.pt'
-        self.load_label_path = '/home/rdclab/Data/tensor/intersection_detactor/dataset/lrcn/label/re_cat/right_add_area_re_ele_dai_temae_go/label.pt'
+        # self.load_image_path = '/home/rdclab/Data/tensor/intersection_detactor/dataset/lrcn/image/re_cat/right_add_area_re_ele_dai_temae_go/image.pt'
+        # self.load_label_path = '/home/rdclab/Data/tensor/intersection_detactor/dataset/lrcn/label/re_cat/right_add_area_re_ele_dai_temae_go/label.pt'
 
+        self.load_image_path = '/home/rdclab/Data/tensor/intersection_detactor/dataset/lrcn/image/add/re_cat/dead_end_2/image.pt'
+        self.load_label_path = '/home/rdclab/Data/tensor/intersection_detactor/dataset/lrcn/label/add_re/re_cat/dead_end_2/label.pt'
         # self.load_path =roslib.packages.get_pkg_dir('intersection_detector') + '/data/model/lrcn/real/frame16/hz8/30ep/0707_bright_dark_all/model_gpu.pt'
         # self.load_path =roslib.packages.get_pkg_dir('intersection_detector') + '/data/model/lrcn/real/frame16/hz8/30ep/0904_right_blind_add/model_gpu.pt'
         self.load_path =roslib.packages.get_pkg_dir('intersection_detector') + '/data/model/lrcn/real/frame16/hz8/30ep/0911_right_add_area_ele_dai_temae_go/model_gpu.pt'
@@ -186,7 +188,6 @@ class intersection_detector_node:
 
             self.b2t.load(self.load_path)
             print("load model: ",self.load_path)
-
             # print(self.load_image_path)
             # print(self.load_label_path)
             # x_tensor,t_tensor = self.b2t.cat_tensor(self.load_center_image_path,self.load_left_image_path,self.load_right_image_path,
@@ -198,7 +199,10 @@ class intersection_detector_node:
                                                     # self.load_label_path_2,self.load_label_path_3)
             x_tensor = self.load_image_path
             t_tensor = self.load_label_path
-            _,_ = self.b2t.cat_training(x_tensor,t_tensor,True)
+            #show label info
+            self.b2t.tensor_info(x_tensor,t_tensor)
+            sys.exit()
+            # _,_ = self.b2t.cat_training(x_tensor,t_tensor,True)
             # _,_ = self.b2t.training(self.load_image_path,self.load_label_path)
             # self.b2t.save_bagfile(x_tensor,self.save_image_path,'/image.pt')
             # self.b2t.save_bagfile(t_tensor,self.save_label_path, '/label.pt')

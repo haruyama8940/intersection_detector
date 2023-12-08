@@ -38,14 +38,14 @@ class intersection_detector_node:
         # self.intersection_pub = rospy.Publisher("passage_type",String,queue_size=1)
         self.intersection_pub = rospy.Publisher("passage_type",cmd_dir_intersection,queue_size=1)
         # self.image_sub = rospy.Subscriber("/camera_center/image_raw", Image, self.callback)
-        # self.image_sub = rospy.Subscriber("/image_center", Image, self.callback)
+        self.image_sub = rospy.Subscriber("/image_center", Image, self.callback)
         # self.image_sub = rospy.Subscriber("/image_left", Image, self.callback)
-        self.image_sub = rospy.Subscriber("/image_right", Image, self.callback)
+        # self.image_sub = rospy.Subscriber("/image_right", Image, self.callback)
         # self.image_left_sub = rospy.Subscriber("/camera_left/rgb/image_raw", Image, self.callback_left_camera)
         # self.image_right_sub = rospy.Subscriber("/camera_right/rgb/image_raw", Image, self.callback_right_camera)
-        self.srv = rospy.Service('/training_intersection', SetBool, self.callback_dl_training)
+        self.srv = rospy.Service('/training_intersection', SetBool, self.callback_save_tensor)
 
-        self.loop_srv = rospy.Service('/loop_count', SetBool, self.callback_dl_training)
+        self.loop_srv = rospy.Service('/loop_count', SetBool, self.callback_save_tensor)
         
         # self.mode_save_srv = rospy.Service('/model_save_intersection', Trigger, self.callback_model_save)
         self.cmd_dir_sub = rospy.Subscriber("/cmd_dir_intersection", cmd_dir_intersection, self.callback_cmd,queue_size=1)
@@ -67,7 +67,8 @@ class intersection_detector_node:
         # self.path = roslib.packages.get_pkg_dir('intersection_detector') + '/data/result'
         # self.save_image_path = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/lrcn/image/add/re_cat/'
         self.save_label_path = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/lrcn/label/add/re_cat/'
-        self.save_image_path ='/home/rdclab/Data/tensor/intersection_detactor/dataset/lrcn/image/re_cat/' 
+        self.save_image_path = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/lrcn/image/add/re_cat/'
+        # self.save_image_path ='/home/rdclab/Data/tensor/intersection_detactor/dataset/lrcn/image/re_cat/' 
         # self.save_label_path = 'home/rdclab/Data/tensor/intersection_detactor/dataset/lrcn/label/re_cat/'
         
         self.load_image_folder_path = roslib.packages.get_pkg_dir('intersection_detector') + '/data/dataset/lrcn/image/add/re_cat/*/'
@@ -150,27 +151,12 @@ class intersection_detector_node:
         except CvBridgeError as e:
             print(e)
 
-    # def callback_left_camera(self, data):
-    #     try:
-    #         # self.cv_left_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
-    #         self.cv_left_image = self.bridge.imgmsg_to_cv2(data, "rgb8")
-    #     except CvBridgeError as e:
-    #         print(e)
-
-    # def callback_right_camera(self, data):
-    #     try:
-    #         # self.cv_right_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
-    #         self.cv_right_image = self.bridge.imgmsg_to_cv2(data, "rgb8")
-    #     except CvBridgeError as e:
-    #         print(e)
-
 
     def callback_cmd(self, data):
         self.cmd_dir_data = data.intersection_label
-        # rospy.loginfo(self.cmd_dir_data)
-        # rospy.loginfo(self.cmd_dir_data)
 
-    def callback_dl_training(self, data):
+
+    def callback_save_tensor(self, data):
         resp = SetBoolResponse()
         # self.learning = data.data
         self.save_tensor_flag = data.data
@@ -249,7 +235,8 @@ class intersection_detector_node:
             print(self.save_label_path)
             os.system('killall roslaunch')
             sys.exit()
-
+        else :
+            pass
 
 
 if __name__ == '__main__':
